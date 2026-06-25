@@ -18,11 +18,9 @@
   </div>
 
   <script>
-    // 1. 본인의 정보로 꼭 수정하세요!
     const SUPABASE_URL = 'https://sxuewadydnbhyzvnelvn.supabase.co'; 
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4dWV3YWR5ZG5iaHl6dm5lbHZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMjA1NTIsImV4cCI6MjA5Nzg5NjU1Mn0.PzptS0JsU1JDOKiyIEhFwQ3x5MwPMid_qz1ALWABmU4';
 
-    // 페이지 열리면 메시지 목록 가져오기
     window.onload = displayMessages;
 
     async function saveMessage() {
@@ -30,7 +28,6 @@
       const content = input.value;
       if (!content) return;
 
-      // Supabase 데이터베이스에 저장 (POST)
       await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
         method: 'POST',
         headers: {
@@ -43,14 +40,14 @@
       });
 
       input.value = '';
-      displayMessages(); // 저장 후 목록 새로고침
+      displayMessages();
     }
 
     async function displayMessages() {
       const displayArea = document.getElementById('displayArea');
       
-      // Supabase 데이터베이스에서 가져오기 (GET)
-      const response = await fetch(`${SUPABASE_URL}/rest/v1/messages?select=*&order=id.desc`, {
+      // 최신순 정렬을 위해 order=created_at.desc를 사용합니다.
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/messages?select=*&order=created_at.desc`, {
         headers: {
           'apikey': SUPABASE_KEY,
           'Authorization': `Bearer ${SUPABASE_KEY}`
@@ -63,13 +60,11 @@
       } else {
         displayArea.innerHTML = data.map(m => `
           <div style="border-bottom: 1px solid #eee; padding: 10px 0;">
-            <span style="font-size: 0.9em; color: #333;">${m.content}</span>
+            <span style="font-size: 0.9em; color: #333;">[${m.created_at}] ${m.content}</span>
           </div>
         `).join('');
       }
     }
   </script>
-</body>
-</html>
 </body>
 </html>
