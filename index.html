@@ -5,15 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GBSA 공용장비사용실 사용일지</title>
 </head>
-<body style="text-align: center; padding: 50px; font-family: sans-serif; background-color: #f9f9f9;">
+<body style="text-align: center; padding: 20px; font-family: sans-serif; background-color: #f9f9f9;">
   <h1>GBSA 공용장비사용실 사용일지</h1>
-  <p>사용기록을 남겨주세요</p>
   
-  <input type="text" id="messageInput" placeholder="메시지를 입력하세요" style="padding: 12px; width: 250px; border: 1px solid #ddd; border-radius: 5px;">
-  <button onclick="saveMessage()" style="padding: 12px 20px; background-color: #000; color: #fff; border: none; border-radius: 5px; cursor: pointer;">저장하기</button>
+  <div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); max-width: 400px; margin: 0 auto 30px auto; text-align: left;">
+    <div style="margin-bottom: 10px;">
+      <label style="display: block; font-size: 0.9em; margin-bottom: 5px;">1. 사용기업명</label>
+      <input type="text" id="company" style="width: 94%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+    </div>
+    <div style="margin-bottom: 10px;">
+      <label style="display: block; font-size: 0.9em; margin-bottom: 5px;">2. 사용자</label>
+      <input type="text" id="userName" style="width: 94%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+    </div>
+    <div style="margin-bottom: 10px;">
+      <label style="display: block; font-size: 0.9em; margin-bottom: 5px;">3. 비고</label>
+      <input type="text" id="note" style="width: 94%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+    </div>
+    <div style="margin-bottom: 15px;">
+      <label style="display: block; font-size: 0.9em; margin-bottom: 5px;">4. 구분</label>
+      <input type="radio" name="type" value="시작" id="start" checked> <label for="start">사용시작</label>
+      <input type="radio" name="type" value="종료" id="end" style="margin-left: 20px;"> <label for="end">사용종료</label>
+    </div>
+    <button onclick="saveLog()" style="width: 100%; padding: 12px; background-color: #000; color: #fff; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">기록 저장하기</button>
+  </div>
 
-  <div id="messageList" style="margin-top: 40px; max-width: 400px; margin-left: auto; margin-right: auto; text-align: left; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-    <h3 style="border-bottom: 2px solid #eee; padding-bottom: 10px;">사용기록 대장</h3>
+  <div id="logList" style="max-width: 500px; margin: 0 auto; text-align: left; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+    <h3 style="border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0;">최근 사용 기록</h3>
     <div id="displayArea">불러오는 중...</div>
   </div>
 
@@ -21,12 +38,18 @@
     const SUPABASE_URL = 'https://sxuewadydnbhyzvnelvn.supabase.co'; 
     const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4dWV3YWR5ZG5iaHl6dm5lbHZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMjA1NTIsImV4cCI6MjA5Nzg5NjU1Mn0.PzptS0JsU1JDOKiyIEhFwQ3x5MwPMid_qz1ALWABmU4';
 
-    window.onload = displayMessages;
+    window.onload = displayLogs;
 
-    async function saveMessage() {
-      const input = document.getElementById('messageInput');
-      const content = input.value;
-      if (!content) return;
+    async function saveLog() {
+      const company = document.getElementById('company').value;
+      const userName = document.getElementById('userName').value;
+      const note = document.getElementById('note').value;
+      const type = document.querySelector('input[name="type"]:checked').value;
+
+      if (!company || !userName) {
+        alert('기업명과 사용자를 입력해주세요.');
+        return;
+      }
 
       await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
         method: 'POST',
@@ -36,16 +59,23 @@
           'Content-Type': 'application/json',
           'Prefer': 'return=minimal'
         },
-        body: JSON.stringify({ content: content })
+        body: JSON.stringify({ 
+          company: company, 
+          user_name: userName, 
+          note: note, 
+          type: type 
+        })
       });
 
-      input.value = '';
-      displayMessages();
+      // 입력창 초기화
+      document.getElementById('company').value = '';
+      document.getElementById('userName').value = '';
+      document.getElementById('note').value = '';
+      displayLogs();
     }
 
-    async function displayMessages() {
+    async function displayLogs() {
       const displayArea = document.getElementById('displayArea');
-      
       const response = await fetch(`${SUPABASE_URL}/rest/v1/messages?select=*&order=created_at.desc`, {
         headers: {
           'apikey': SUPABASE_KEY,
@@ -55,22 +85,18 @@
       const data = await response.json();
 
       if (data.length === 0) {
-        displayArea.innerHTML = '<p style="color: #999;">첫 메시지를 남겨보세요!</p>';
+        displayArea.innerHTML = '<p style="color: #999;">기록이 없습니다.</p>';
       } else {
         displayArea.innerHTML = data.map(m => {
-          // 시간 형식을 [YYYY-MM.DD] HH:mm 으로 변환
           const d = new Date(m.created_at);
-          const year = d.getFullYear();
-          const month = String(d.getMonth() + 1).padStart(2, '0');
-          const day = String(d.getDate()).padStart(2, '0');
-          const hours = String(d.getHours()).padStart(2, '0');
-          const minutes = String(d.getMinutes()).padStart(2, '0');
+          const timeStr = `[${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}] ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
           
-          const formattedTime = `[${year}-${month}.${day}] ${hours}:${minutes}`;
-
           return `
-            <div style="border-bottom: 1px solid #eee; padding: 10px 0;">
-              <span style="font-size: 0.9em; color: #333;">${formattedTime} ${m.content}</span>
+            <div style="border-bottom: 1px solid #eee; padding: 10px 0; font-size: 0.9em;">
+              <span style="color: #666;">${timeStr}</span> 
+              <b style="color: ${m.type === '시작' ? 'blue' : 'red'};">[${m.type}]</b> 
+              <span>${m.company} / ${m.user_name}</span>
+              <div style="color: #888; font-size: 0.85em; margin-top: 3px;">비고: ${m.note || '-'}</div>
             </div>
           `;
         }).join('');
@@ -79,6 +105,5 @@
   </script>
 </body>
 </html>
-  </script>
 </body>
 </html>
