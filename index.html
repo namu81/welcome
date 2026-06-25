@@ -13,7 +13,7 @@
   <button onclick="saveMessage()" style="padding: 12px 20px; background-color: #000; color: #fff; border: none; border-radius: 5px; cursor: pointer;">저장하기</button>
 
   <div id="messageList" style="margin-top: 40px; max-width: 400px; margin-left: auto; margin-right: auto; text-align: left; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-    <h3 style="border-bottom: 2px solid #eee; padding-bottom: 10px;">방명록</h3>
+    <h3 style="border-bottom: 2px solid #eee; padding-bottom: 10px;">사용기록 대장</h3>
     <div id="displayArea">불러오는 중...</div>
   </div>
 
@@ -46,7 +46,6 @@
     async function displayMessages() {
       const displayArea = document.getElementById('displayArea');
       
-      // 최신순 정렬을 위해 order=created_at.desc를 사용합니다.
       const response = await fetch(`${SUPABASE_URL}/rest/v1/messages?select=*&order=created_at.desc`, {
         headers: {
           'apikey': SUPABASE_KEY,
@@ -58,13 +57,28 @@
       if (data.length === 0) {
         displayArea.innerHTML = '<p style="color: #999;">첫 메시지를 남겨보세요!</p>';
       } else {
-        displayArea.innerHTML = data.map(m => `
-          <div style="border-bottom: 1px solid #eee; padding: 10px 0;">
-            <span style="font-size: 0.9em; color: #333;">[${m.created_at}] ${m.content}</span>
-          </div>
-        `).join('');
+        displayArea.innerHTML = data.map(m => {
+          // 시간 형식을 [YYYY-MM.DD] HH:mm 으로 변환
+          const d = new Date(m.created_at);
+          const year = d.getFullYear();
+          const month = String(d.getMonth() + 1).padStart(2, '0');
+          const day = String(d.getDate()).padStart(2, '0');
+          const hours = String(d.getHours()).padStart(2, '0');
+          const minutes = String(d.getMinutes()).padStart(2, '0');
+          
+          const formattedTime = `[${year}-${month}.${day}] ${hours}:${minutes}`;
+
+          return `
+            <div style="border-bottom: 1px solid #eee; padding: 10px 0;">
+              <span style="font-size: 0.9em; color: #333;">${formattedTime} ${m.content}</span>
+            </div>
+          `;
+        }).join('');
       }
     }
+  </script>
+</body>
+</html>
   </script>
 </body>
 </html>
