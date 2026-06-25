@@ -1,7 +1,49 @@
-<h1>Welcome</h1>
-<div style="text-align: center; padding: 50px; font-family: sans-serif;">
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>남우중님의 페이지</title>
+</head>
+<body style="text-align: center; padding: 50px; font-family: sans-serif;">
   <h1>남우중님의 페이지</h1>
   <p>메시지를 남겨주세요.</p>
-  <input type="text" placeholder="여기에 입력하세요" style="padding: 10px; width: 200px;">
-  <button style="padding: 10px;">확인</button>
-</div>
+  
+  <input type="text" id="messageInput" placeholder="여기에 입력하세요" style="padding: 10px; width: 200px;">
+  <button onclick="saveMessage()" style="padding: 10px;">저장</button>
+
+  <div id="messageList" style="margin-top: 30px; text-align: left; display: inline-block; min-width: 200px;">
+    <h3>저장된 메시지:</h3>
+    <div id="displayArea"></div>
+  </div>
+
+  <script>
+    // 페이지가 열릴 때 저장된 메시지 불러오기
+    window.onload = function() {
+      displayMessages();
+    };
+
+    function saveMessage() {
+      const input = document.getElementById('messageInput');
+      const message = input.value;
+      
+      if (message) {
+        // 1. 기존 데이터 가져오기
+        let messages = JSON.parse(localStorage.getItem('myMessages') || '[]');
+        // 2. 새 메시지 추가
+        messages.push(message);
+        // 3. 다시 저장하기
+        localStorage.setItem('myMessages', JSON.stringify(messages));
+        
+        input.value = ''; // 입력창 비우기
+        displayMessages(); // 화면 업데이트
+      }
+    }
+
+    function displayMessages() {
+      const displayArea = document.getElementById('displayArea');
+      const messages = JSON.parse(localStorage.getItem('myMessages') || '[]');
+      displayArea.innerHTML = messages.map(m => `<p style="border-bottom: 1px solid #eee; padding: 5px;">${m}</p>`).join('');
+    }
+  </script>
+</body>
+</html>
