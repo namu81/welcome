@@ -2,48 +2,74 @@
 <html>
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>남우중님의 페이지</title>
 </head>
-<body style="text-align: center; padding: 50px; font-family: sans-serif;">
+<body style="text-align: center; padding: 50px; font-family: sans-serif; background-color: #f9f9f9;">
   <h1>남우중님의 페이지</h1>
-  <p>메시지를 남겨주세요.</p>
+  <p>전 세계 어디서든 메시지를 남겨보세요!</p>
   
-  <input type="text" id="messageInput" placeholder="여기에 입력하세요" style="padding: 10px; width: 200px;">
-  <button onclick="saveMessage()" style="padding: 10px;">저장</button>
+  <input type="text" id="messageInput" placeholder="메시지를 입력하세요" style="padding: 12px; width: 250px; border: 1px solid #ddd; border-radius: 5px;">
+  <button onclick="saveMessage()" style="padding: 12px 20px; background-color: #000; color: #fff; border: none; border-radius: 5px; cursor: pointer;">저장하기</button>
 
-  <div id="messageList" style="margin-top: 30px; text-align: left; display: inline-block; min-width: 200px;">
-    <h3>저장된 메시지:</h3>
-    <div id="displayArea"></div>
+  <div id="messageList" style="margin-top: 40px; max-width: 400px; margin-left: auto; margin-right: auto; text-align: left; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+    <h3 style="border-bottom: 2px solid #eee; padding-bottom: 10px;">방명록</h3>
+    <div id="displayArea">불러오는 중...</div>
   </div>
 
   <script>
-    // 페이지가 열릴 때 저장된 메시지 불러오기
-    window.onload = function() {
-      displayMessages();
-    };
+    // 1. 본인의 정보로 꼭 수정하세요!
+    const SUPABASE_URL = 'https://sxuewadydnbhyzvnelvn.supabase.co'; 
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN4dWV3YWR5ZG5iaHl6dm5lbHZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzMjA1NTIsImV4cCI6MjA5Nzg5NjU1Mn0.PzptS0JsU1JDOKiyIEhFwQ3x5MwPMid_qz1ALWABmU4';
 
-    function saveMessage() {
+    // 페이지 열리면 메시지 목록 가져오기
+    window.onload = displayMessages;
+
+    async function saveMessage() {
       const input = document.getElementById('messageInput');
-      const message = input.value;
+      const content = input.value;
+      if (!content) return;
+
+      // Supabase 데이터베이스에 저장 (POST)
+      await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ content: content })
+      });
+
+      input.value = '';
+      displayMessages(); // 저장 후 목록 새로고침
+    }
+
+    async function displayMessages() {
+      const displayArea = document.getElementById('displayArea');
       
-      if (message) {
-        // 1. 기존 데이터 가져오기
-        let messages = JSON.parse(localStorage.getItem('myMessages') || '[]');
-        // 2. 새 메시지 추가
-        messages.push(message);
-        // 3. 다시 저장하기
-        localStorage.setItem('myMessages', JSON.stringify(messages));
-        
-        input.value = ''; // 입력창 비우기
-        displayMessages(); // 화면 업데이트
+      // Supabase 데이터베이스에서 가져오기 (GET)
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/messages?select=*&order=id.desc`, {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
+        }
+      });
+      const data = await response.json();
+
+      if (data.length === 0) {
+        displayArea.innerHTML = '<p style="color: #999;">첫 메시지를 남겨보세요!</p>';
+      } else {
+        displayArea.innerHTML = data.map(m => `
+          <div style="border-bottom: 1px solid #eee; padding: 10px 0;">
+            <span style="font-size: 0.9em; color: #333;">${m.content}</span>
+          </div>
+        `).join('');
       }
     }
-
-    function displayMessages() {
-      const displayArea = document.getElementById('displayArea');
-      const messages = JSON.parse(localStorage.getItem('myMessages') || '[]');
-      displayArea.innerHTML = messages.map(m => `<p style="border-bottom: 1px solid #eee; padding: 5px;">${m}</p>`).join('');
-    }
   </script>
+</body>
+</html>
 </body>
 </html>
